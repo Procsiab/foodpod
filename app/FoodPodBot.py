@@ -161,6 +161,8 @@ class FoodPodBot:
             _query.edit_message_text(text="Deleted item {} from storage {}".format(item_name, storage_name))
             cmd_name = "none"
             cmd_arg = "none"
+        if (pressed_button["button_type"] == "expired_button"):
+            self._list_storage_expired_items(_query, pressed_button["foodpod_id"], cmd_name)
         if (pressed_button["button_type"] == "back_button"):
             if (cmd_name == "back_bot"):
                 _query.edit_message_text(text="Back to the main bot's chat")
@@ -176,10 +178,13 @@ class FoodPodBot:
                 cmd_name = pressed_button["button_value"].split('@')[1]
                 self._show_item(_query, pressed_button["foodpod_id"], cmd_arg, cmd_name)
         if (pressed_button["button_type"] == "item_button"):
+            item_name = cmd_name
+            if ("item_expired@" in cmd_name):
+                item_name = cmd_name.split("@")[1]
             self._show_item(_query,
                             pressed_button["foodpod_id"],
                             cmd_arg,
-                            cmd_name)
+                            item_name)
         self._db_connection.set_global_cmd_name(pressed_button["foodpod_id"],
                                                 cmd_name)
         self._db_connection.set_global_cmd_arg(pressed_button["foodpod_id"],
@@ -269,6 +274,8 @@ class FoodPodBot:
         inline_keyboard.append([])
         inline_keyboard[-1].append(InlineKeyboardButton("🔄 Add", callback_data=chatid+":add_button:new_item"))
         inline_keyboard[-1].append(InlineKeyboardButton("⬅️  Back", callback_data=chatid+":back_button:back_storage"))
+        inline_keyboard.append([InlineKeyboardButton("😵  Filter expired",
+                                                     callback_data=chatid+":expired_button:"+storage)])
         inline_keyboard.append([InlineKeyboardButton("⤵️  Delete {}".format(storage),
                                                      callback_data=chatid+":del_button:del_storage")])
         keyboard_markup = InlineKeyboardMarkup(inline_keyboard)
@@ -280,11 +287,41 @@ class FoodPodBot:
                                     reply_markup=keyboard_markup,
                                     parse_mode="markdown")
 
+    def _list_storage_expired_items(self, query, chatid, storage):
+        _null_inline_button = [InlineKeyboardButton("~ Empty ~", callback_data=chatid+":empty_button:none")]
+        inline_keyboard = [_null_inline_button]
+        item_list = self._db_connection.get_item_expired_list(chatid, storage)
+        if (len(item_list) > 0):
+            inline_keyboard.pop()
+            for item_dict in item_list:
+                item_name = "{} ({} days ago)".format(item_dict["item_name"],
+                                                        item_dict["days_expired"])
+                inline_button = [InlineKeyboardButton(item_name,
+                                                      callback_data=chatid+":item_button:item_expired@"+item_dict["item_name"])]
+                inline_keyboard.append(inline_button)
+        inline_keyboard.append([])
+        inline_keyboard.append([InlineKeyboardButton("⬅️  Back",
+                                                     callback_data=chatid+":back_button:back_item_list@"+storage)])
+        inline_keyboard.append([InlineKeyboardButton("🗑 Empty all expired",
+                                                     callback_data=chatid+":del_button:del_expired")])
+        keyboard_markup = InlineKeyboardMarkup(inline_keyboard)
+        msg_id = query.message.message_id
+        chat_id = query.message.chat.id
+        query.bot.edit_message_text("😵 *Expired* (_{}_)\nSelect an item to list its properties"
+                                    .format(storage),
+                                    message_id=msg_id, chat_id=chat_id,
+                                    reply_markup=keyboard_markup,
+                                    parse_mode="markdown")
+
     def _show_item(self, query, chatid, storage_name, item_name):
         inline_keyboard = []
         inline_keyboard.append([])
         inline_keyboard[-1].append(InlineKeyboardButton("ℹ️  Modify", callback_data=chatid+":"+"modify_item"+":"+storage_name+"@"+item_name))
-        inline_keyboard[-1].append(InlineKeyboardButton("⬅️  Back", callback_data=chatid+":back_button:back_item_list@"+storage_name))
+        callback_button_value = query.data.split(':')[2]
+        if ("item_expired@" in callback_button_value):
+            inline_keyboard[-1].append(InlineKeyboardButton("⬅️  Back", callback_data=chatid+":expired_button:"+storage_name))
+        else:
+            inline_keyboard[-1].append(InlineKeyboardButton("⬅️  Back", callback_data=chatid+":back_button:back_item_list@"+storage_name))
         inline_keyboard.append([InlineKeyboardButton("⤵️  Delete {}".format(item_name),
                                                      callback_data=chatid+":del_button:del_item@"+item_name)])
         keyboard_markup = InlineKeyboardMarkup(inline_keyboard)

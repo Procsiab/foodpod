@@ -3,6 +3,7 @@ import redis
 
 from os import environ
 from copy import copy
+from datetime import date, datetime
 
 
 class DbConnectionSingleton:
@@ -123,3 +124,19 @@ class DbConnectionSingleton:
 
     def get_item_list_len(self, chatid, storage):
         return self._db_instance.llen(chatid + ":" + storage + ":item_list")
+
+    def get_item_expired_list(self, chatid, storage):
+        item_list = self._db_instance.lrange(chatid + ":" + storage + ":item_list", 0, -1)
+        current_date = date.today()
+        expired_items_list = []
+        for item_name in item_list:
+            item_expiry_date = datetime.strptime(self.get_item_expiry(chatid,
+                                                                      storage,
+                                                                      item_name),
+                                                 "%Y-%m-%d").date()
+            item_quantity = int(self.get_item_quantity(chatid, storage, item_name))
+            if (item_quantity > 0 and current_date > item_expiry_date):
+                days_expired_delta = (current_date - item_expiry_date).days
+                expired_items_list.append({"item_name": item_name,
+                                           "days_expired": days_expired_delta})
+        return sorted(expired_items_list, key=lambda k: k["days_expired"], reverse=True)
