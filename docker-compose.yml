@@ -1,0 +1,24 @@
+version: "3"
+services:
+    bot:
+        image: procsiab/foodpod:1.0-aarch64
+        container_name: foodpod
+        hostname: foodpod
+        volumes:
+            - ./app:/app:z
+            - ./.secrets:/secrets:z
+        restart: unless-stopped
+        env:
+            - REDIS_HOST="foodpod-db"
+            - REDIS_PORT="6379"
+            - REDIS_DB="0"
+            - REDIS_PASS=""
+    foodpod-db:
+        image: redis:6.2.1-alpine
+        container_name: foodpod-db
+        hostname: foodpod-db
+        volumes:
+            - .redis:/data:Z
+        ports:
+            - "6379:6379"
+        command: ["redis-server", "--appendonly", "yes"]

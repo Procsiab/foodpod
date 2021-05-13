@@ -1,0 +1,6 @@
+# QEMU's static binaries
+qemu-*
+# Secrets files
+.secrets/*
+# Redis test persistent storage
+.redis/*
