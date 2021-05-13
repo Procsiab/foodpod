@@ -39,7 +39,7 @@ class FoodPodBot:
 
     def _callback_start(self, update, context):
         _username = update.message.from_user['username']
-        _chatid = str(update.message.from_user['id'])
+        _chatid = str(update.message.chat.id)
         if _chatid in self._auth_users:
             context.bot.send_message(chat_id=_chatid,
                                      text="🔧 Welcome, {}".format(_username))
@@ -51,7 +51,7 @@ class FoodPodBot:
                          .format(_username, _chatid))
 
     def _callback_stop(self, update, context):
-        _chatid = str(update.message.from_user['id'])
+        _chatid = str(update.message.chat.id)
         cmd_name = self._db_connection.get_global_cmd_name(_chatid)
         if (cmd_name == "none"):
             update.message.reply_text("There's no action in progress to cancel")
@@ -65,7 +65,7 @@ class FoodPodBot:
 
     def _callback_info(self, update, context):
         _username = update.message.from_user['username']
-        _chatid = str(update.message.from_user['id'])
+        _chatid = str(update.message.chat.id)
         logging.info("The user {} [{}] has called the server_info function"
                      .format(_username, _chatid))
         if _chatid in self._auth_users:
@@ -73,7 +73,7 @@ class FoodPodBot:
                                      text=self._db_connection.get_info())
 
     def _callback_unknown(self, update, context):
-        _chatid = str(update.message.from_user['id'])
+        _chatid = str(update.message.chat.id)
         context.bot.send_message(chat_id=_chatid,
                                  text="🚧 The provided command was not recognized!")
         _username = update.message.from_user['username']
@@ -82,7 +82,7 @@ class FoodPodBot:
 
     def _callback_error(self, update, context):
         try:
-            _chatid = str(update.message.from_user['id'])
+            _chatid = str(update.message.chat.id)
             if (_chatid is not None):
                 context.bot.send_message(chat_id=_chatid,
                                          text="🚨 The following error occurred, contact an administrator: {}"
@@ -108,7 +108,7 @@ class FoodPodBot:
                              text="🚧 This chat was already registered as a Food Pod!")
 
     def _callback_items(self, update, context):
-        _chatid = str(update.message.from_user['id'])
+        _chatid = str(update.message.chat.id)
         self._list_storage(update, _chatid)
         _username = update.message.from_user['username']
         logging.info("The user {} [{}] called the items function"
@@ -186,7 +186,7 @@ class FoodPodBot:
                                                cmd_arg)
 
     def _callback_message(self, update, context):
-        _chatid = str(update.message.from_user['id'])
+        _chatid = str(update.message.chat.id)
         cmd_name = self._db_connection.get_global_cmd_name(_chatid)
         cmd_arg = self._db_connection.get_global_cmd_arg(_chatid)
         reply_text = None
