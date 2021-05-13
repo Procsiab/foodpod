@@ -38,7 +38,7 @@ class FoodPodBot:
 #        self._dispatcher.add_error_handler(self._callback_error)
 
     def _callback_start(self, update, context):
-        _username = update.message.from_user['username']
+        _username = update.message.from_user.username
         _chatid = str(update.message.chat.id)
         if _chatid in self._auth_users:
             context.bot.send_message(chat_id=_chatid,
@@ -56,7 +56,7 @@ class FoodPodBot:
         if (cmd_name == "none"):
             update.message.reply_text("There's no action in progress to cancel")
         else:
-            _username = update.message.from_user['username']
+            _username = update.message.from_user.username
             logging.info("The user {} [{}] has cancelled the operation '{}'"
                          .format(_username, _chatid, cmd_name))
             self._db_connection.set_global_cmd_name(_chatid, "none")
@@ -64,7 +64,7 @@ class FoodPodBot:
             update.message.reply_text("Operation cancelled")
 
     def _callback_info(self, update, context):
-        _username = update.message.from_user['username']
+        _username = update.message.from_user.username
         _chatid = str(update.message.chat.id)
         logging.info("The user {} [{}] has called the server_info function"
                      .format(_username, _chatid))
@@ -76,7 +76,7 @@ class FoodPodBot:
         _chatid = str(update.message.chat.id)
         context.bot.send_message(chat_id=_chatid,
                                  text="🚧 The provided command was not recognized!")
-        _username = update.message.from_user['username']
+        _username = update.message.from_user.username
         logging.info("The user {} [{}] has sent an unknown command: '{}'"
                      .format(_username, _chatid, update.message.text))
 
@@ -109,8 +109,8 @@ class FoodPodBot:
 
     def _callback_items(self, update, context):
         _chatid = str(update.message.chat.id)
+        _username = update.message.from_user.username
         self._list_storage(update, _chatid)
-        _username = update.message.from_user['username']
         logging.info("The user {} [{}] called the items function"
                      .format(_username, _chatid))
 
