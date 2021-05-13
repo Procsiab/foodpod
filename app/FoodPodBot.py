@@ -230,7 +230,7 @@ class FoodPodBot:
             update.message.reply_text(reply_text, reply_markup=keyboard_markup)
 
     def _list_storage(self, query, chatid):
-        _null_inline_button = [InlineKeyboardButton("Empty", callback_data=chatid+":empty_button:none")]
+        _null_inline_button = [InlineKeyboardButton("~ Empty ~", callback_data=chatid+":empty_button:none")]
         inline_keyboard = [_null_inline_button]
         storage_list = self._db_connection.get_storage_list(chatid)
         if (len(storage_list) > 0):
@@ -240,8 +240,8 @@ class FoodPodBot:
                                                       callback_data=chatid+":storage_button:"+storage_location)]
                 inline_keyboard.append(inline_button)
         inline_keyboard.append([])
-        inline_keyboard[-1].append(InlineKeyboardButton("Add", callback_data=chatid+":add_button:new_storage"))
-        inline_keyboard[-1].append(InlineKeyboardButton("Back", callback_data=chatid+":back_button:back_bot"))
+        inline_keyboard[-1].append(InlineKeyboardButton("🔄 Add", callback_data=chatid+":add_button:new_storage"))
+        inline_keyboard[-1].append(InlineKeyboardButton("⬅️  Back", callback_data=chatid+":back_button:back_bot"))
         keyboard_markup = InlineKeyboardMarkup(inline_keyboard)
         reply_text = "Select a storage location to list its contents"
         if (type(query) is Update):
@@ -257,7 +257,7 @@ class FoodPodBot:
             logging.warning("Unknown type '{}' for query argument in function _list_storage (pod ID: {})".format(type(query), chatid))
 
     def _list_items(self, query, chatid, storage):
-        _null_inline_button = [InlineKeyboardButton("Empty", callback_data=chatid+":empty_button:none")]
+        _null_inline_button = [InlineKeyboardButton("~ Empty ~", callback_data=chatid+":empty_button:none")]
         inline_keyboard = [_null_inline_button]
         item_list = self._db_connection.get_item_list(chatid, storage)
         if (len(item_list) > 0):
@@ -267,32 +267,37 @@ class FoodPodBot:
                                                       callback_data=chatid+":item_button:"+item_name)]
                 inline_keyboard.append(inline_button)
         inline_keyboard.append([])
-        inline_keyboard[-1].append(InlineKeyboardButton("Add", callback_data=chatid+":add_button:new_item"))
-        inline_keyboard[-1].append(InlineKeyboardButton("Back", callback_data=chatid+":back_button:back_storage"))
-        inline_keyboard.append([InlineKeyboardButton("Delete Storage", callback_data=chatid+":del_button:del_storage")])
+        inline_keyboard[-1].append(InlineKeyboardButton("🔄 Add", callback_data=chatid+":add_button:new_item"))
+        inline_keyboard[-1].append(InlineKeyboardButton("⬅️  Back", callback_data=chatid+":back_button:back_storage"))
+        inline_keyboard.append([InlineKeyboardButton("⤵️  Delete {}".format(storage),
+                                                     callback_data=chatid+":del_button:del_storage")])
         keyboard_markup = InlineKeyboardMarkup(inline_keyboard)
         msg_id = query.message.message_id
         chat_id = query.message.chat.id
-        query.bot.edit_message_text("Select an item to list its properties",
+        query.bot.edit_message_text("📦 Storage: *{}*\nSelect an item to list its properties"
+                                    .format(storage),
                                     message_id=msg_id, chat_id=chat_id,
-                                    reply_markup=keyboard_markup)
+                                    reply_markup=keyboard_markup,
+                                    parse_mode="markdown")
 
     def _show_item(self, query, chatid, storage_name, item_name):
         inline_keyboard = []
         inline_keyboard.append([])
-        inline_keyboard[-1].append(InlineKeyboardButton("Modify", callback_data=chatid+":"+"modify_item"+":"+storage_name+"@"+item_name))
-        inline_keyboard[-1].append(InlineKeyboardButton("Back", callback_data=chatid+":back_button:back_item_list@"+storage_name))
-        inline_keyboard.append([InlineKeyboardButton("Delete Item", callback_data=chatid+":del_button:del_item@"+item_name)])
+        inline_keyboard[-1].append(InlineKeyboardButton("ℹ️  Modify", callback_data=chatid+":"+"modify_item"+":"+storage_name+"@"+item_name))
+        inline_keyboard[-1].append(InlineKeyboardButton("⬅️  Back", callback_data=chatid+":back_button:back_item_list@"+storage_name))
+        inline_keyboard.append([InlineKeyboardButton("⤵️  Delete {}".format(item_name),
+                                                     callback_data=chatid+":del_button:del_item@"+item_name)])
         keyboard_markup = InlineKeyboardMarkup(inline_keyboard)
         msg_id = query.message.message_id
         chat_id = query.message.chat.id
-        msg_text = "{} ({})\n> Quantity: {}\n> Expires on: {}".format(item_name.upper(), storage_name,
+        msg_text = "🍴 Item: *{}* ({})\n\n🔢 _Quantity_: {}\n📅 _Expires on_: {}".format(item_name.upper(), storage_name,
                                                                       self._db_connection.get_item_quantity(chatid, storage_name, item_name),
                                                                       self._db_connection.get_item_expiry(chatid, storage_name, item_name))
         try:
             query.bot.edit_message_text(msg_text,
                                         message_id=msg_id, chat_id=chat_id,
-                                        reply_markup=keyboard_markup)
+                                        reply_markup=keyboard_markup,
+                                        parse_mode="markdown")
         except BadRequest:
             pass
 
