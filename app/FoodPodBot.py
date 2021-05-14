@@ -207,7 +207,8 @@ class FoodPodBot:
             item_name = update.message.text
             storage_name = cmd_arg
             self._db_connection.add_item(_chatid, storage_name, item_name)
-            reply_text = "Item '{}' added to the storage '{}'".format(item_name, storage_name)
+            reply_text = "Item '{}' added to the storage '{}'\nWrite the quantity as an integer, use /stop to abort".format(item_name, storage_name)
+            cmd_arg = storage_name+"@"+item_name
             cmd_name = "modify_item"
         elif (cmd_name == "modify_item"):
             item_quantity = update.message.text
