@@ -226,8 +226,8 @@ class FoodPodBot:
             item_name = item_string[1]
             self._db_connection.set_item_expiry(_chatid, storage_name, item_name, item_expiry)
             reply_text = "Saved changes for item '{}'".format(item_name)
-            cmd_name = item_name
-            cmd_arg = storage_name
+            cmd_name = "none"
+            cmd_arg = "none"
         else:
             logging.warning("Callback not caught inside _callback_message function, due to unknown global command name '{}'".format(cmd_name))
             is_invalid_callback = True
