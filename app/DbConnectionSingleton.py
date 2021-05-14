@@ -95,6 +95,8 @@ class DbConnectionSingleton:
         return self._db_instance.lrange(chatid + ":storage_list", 0, -1)
 
     def del_storage(self, chatid, storage):
+        for item in self.get_item_list(chatid, storage):
+            self._db_instance.delete(chatid + ":" + storage + ":" + item)
         self._db_instance.delete(chatid + ":" + storage + ":item_list")
         self._db_instance.lrem(chatid + ":storage_list", 1, storage)
 
