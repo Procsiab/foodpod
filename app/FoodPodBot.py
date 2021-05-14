@@ -11,7 +11,8 @@ from DbConnectionSingleton import DbConnectionSingleton
 class FoodPodBot:
 
     def __init__(self, secrets: TelegramSecretsSingleton, db: DbConnectionSingleton):
-        self._updater = Updater(token=secrets.get_telegram_bot_token(), use_context=True)
+        self._updater = Updater(token=secrets.get_telegram_bot_token(), use_context=True,
+                                request_kwargs={"connect_timeout": 20})
         self._dispatcher = self._updater.dispatcher
         self._job_queue = self._updater.job_queue
         self._auth_users = secrets.get_auth_users_list()
