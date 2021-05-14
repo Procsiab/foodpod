@@ -112,8 +112,8 @@ class FoodPodBot:
         _chatid = str(update.message.chat.id)
         _username = update.message.from_user.username
         self._list_storage(update, _chatid)
-        logging.info("The user {} [{}] called the items function"
-                     .format(_username, _chatid))
+        logging.debug("The user {} [{}] called the items function"
+                      .format(_username, _chatid))
 
     def _callback_inline_button(self, update, context):
         _query = update.callback_query
@@ -123,7 +123,7 @@ class FoodPodBot:
             "button_type": selected_button_list[1],
             "button_value": selected_button_list[2]
         }
-        logging.debug("button: {}".format(pressed_button))
+        logging.debug("Inline button callback: {}".format(pressed_button))
         cmd_name = pressed_button["button_value"]
         cmd_arg = self._db_connection.get_global_cmd_arg(pressed_button["foodpod_id"])
         if (pressed_button["button_type"] == "storage_button"):
@@ -149,6 +149,12 @@ class FoodPodBot:
                 self._del_storage_dialog(_query, pressed_button["foodpod_id"], cmd_arg)
             if ("del_item" in cmd_name):
                 self._del_item_dialog(_query, pressed_button["foodpod_id"], cmd_arg, cmd_name)
+            if ("del_expired@" in cmd_name):
+                storage_name = cmd_name.split('@')[1]
+                self._db_connection.empty_expired(pressed_button["foodpod_id"], storage_name)
+                cmd_name = storage_name
+                cmd_arg = cmd_name
+                self._list_items(_query, pressed_button["foodpod_id"], cmd_name)
         if (pressed_button["button_type"] == "del_storage_confirm"):
             self._db_connection.del_storage(pressed_button["foodpod_id"], cmd_arg)
             _query.edit_message_text(text="Deleted storage {}".format(cmd_arg))
@@ -172,10 +178,10 @@ class FoodPodBot:
             if (cmd_name == "back_storage"):
                 cmd_name = cmd_arg
                 self._list_storage(_query, pressed_button["foodpod_id"])
-            if ("back_item_list@" in cmd_name ):
+            if ("back_item_list@" in cmd_name):
                 cmd_name = pressed_button["button_value"].split('@')[1]
                 self._list_items(_query, pressed_button["foodpod_id"], cmd_name)
-            if ("back_item@" in cmd_name ):
+            if ("back_item@" in cmd_name):
                 cmd_name = pressed_button["button_value"].split('@')[1]
                 self._show_item(_query, pressed_button["foodpod_id"], cmd_arg, cmd_name)
         if (pressed_button["button_type"] == "item_button"):
@@ -270,14 +276,18 @@ class FoodPodBot:
         if (len(item_list) > 0):
             inline_keyboard.pop()
             for item_name in item_list:
-                inline_button = [InlineKeyboardButton(item_name,
+                button_label = item_name
+                if (self._db_connection.get_item_quantity(chatid, storage, item_name) == 0):
+                    button_label = item_name+"❔ "
+                inline_button = [InlineKeyboardButton(button_label,
                                                       callback_data=chatid+":item_button:"+item_name)]
                 inline_keyboard.append(inline_button)
         inline_keyboard.append([])
         inline_keyboard[-1].append(InlineKeyboardButton("🔄 Add", callback_data=chatid+":add_button:new_item"))
         inline_keyboard[-1].append(InlineKeyboardButton("⬅️  Back", callback_data=chatid+":back_button:back_storage"))
-        inline_keyboard.append([InlineKeyboardButton("😵  Filter expired",
-                                                     callback_data=chatid+":expired_button:"+storage)])
+        if (len(item_list) > 0):
+            inline_keyboard.append([InlineKeyboardButton("😵  Filter expired",
+                                                         callback_data=chatid+":expired_button:"+storage)])
         inline_keyboard.append([InlineKeyboardButton("⤵️  Delete {}".format(storage),
                                                      callback_data=chatid+":del_button:del_storage")])
         keyboard_markup = InlineKeyboardMarkup(inline_keyboard)
@@ -304,8 +314,9 @@ class FoodPodBot:
         inline_keyboard.append([])
         inline_keyboard.append([InlineKeyboardButton("⬅️  Back",
                                                      callback_data=chatid+":back_button:back_item_list@"+storage)])
-        inline_keyboard.append([InlineKeyboardButton("🗑 Empty all expired",
-                                                     callback_data=chatid+":del_button:del_expired")])
+        if (len(item_list) > 0):
+            inline_keyboard.append([InlineKeyboardButton("🗑 Empty all expired",
+                                                         callback_data=chatid+":del_button:del_expired@"+storage)])
         keyboard_markup = InlineKeyboardMarkup(inline_keyboard)
         msg_id = query.message.message_id
         chat_id = query.message.chat.id

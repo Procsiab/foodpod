@@ -108,7 +108,7 @@ class DbConnectionSingleton:
         self._db_instance.lrem(chatid + ":" + storage + ":item_list", 1, item_name)
 
     def get_item_quantity(self, chatid, storage, item_name):
-        return self._db_instance.hget(chatid + ":" + storage + ":" + item_name, "Quantity")
+        return int(self._db_instance.hget(chatid + ":" + storage + ":" + item_name, "Quantity"))
 
     def get_item_expiry(self, chatid, storage, item_name):
         return self._db_instance.hget(chatid + ":" + storage + ":" + item_name, "Expire")
@@ -140,3 +140,9 @@ class DbConnectionSingleton:
                 expired_items_list.append({"item_name": item_name,
                                            "days_expired": days_expired_delta})
         return sorted(expired_items_list, key=lambda k: k["days_expired"], reverse=True)
+
+    def empty_expired(self, chatid, storage):
+        expired_item_list = self.get_item_expired_list(chatid, storage)
+        for expired_item_dict in expired_item_list:
+            expired_item_name = expired_item_dict["item_name"]
+            self.set_item_quantity(chatid, storage, expired_item_name, 0)
