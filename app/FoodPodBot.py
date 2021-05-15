@@ -340,7 +340,7 @@ class FoodPodBot:
         keyboard_markup = InlineKeyboardMarkup(inline_keyboard)
         msg_id = query.message.message_id
         chat_id = query.message.chat.id
-        msg_text = "🍴 Item: *{}* ({})\n\n🔢 _Quantity_: {}\n📅 _Expires on_: {}".format(item_name.upper(), storage_name,
+        msg_text = "🍴 Item: *{}* ({})\n\n🔢 _Quantity_: `{}`\n📅 _Expires on_: `{}`".format(item_name.upper(), storage_name,
                                                                       self._db_connection.get_item_quantity(chatid, storage_name, item_name),
                                                                       self._db_connection.get_item_expiry(chatid, storage_name, item_name))
         try:
