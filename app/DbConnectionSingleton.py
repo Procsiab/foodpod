@@ -141,7 +141,24 @@ class DbConnectionSingleton:
             if (item_quantity > 0 and current_date > item_expiry_date):
                 days_expired_delta = (current_date - item_expiry_date).days
                 expired_items_list.append({"item_name": item_name,
-                                           "days_expired": days_expired_delta})
+                                           "storage": storage,
+                                           "days_expired": int(days_expired_delta)})
+        return sorted(expired_items_list, key=lambda k: k["days_expired"], reverse=True)
+
+    def get_item_expiring_or_bad_list(self, chatid):
+        current_date = self.get_current_date()
+        storage_list = self._db_instance.lrange(chatid + ":storage_list", 0, -1)
+        expired_items_list = []
+        for storage_name in storage_list:
+            item_list = self._db_instance.lrange(chatid+":"+storage_name+":item_list", 0, -1)
+            for item_name in item_list:
+                item_expiry_date = self.get_item_expiry(chatid, storage_name, item_name)
+                item_quantity = self.get_item_quantity(chatid, storage_name, item_name)
+                days_expired_delta = (current_date - item_expiry_date).days
+                if (item_quantity > 0 and days_expired_delta >= -2):
+                    expired_items_list.append({"item_name": item_name,
+                                               "storage": storage_name,
+                                               "days_expired": int(days_expired_delta)})
         return sorted(expired_items_list, key=lambda k: k["days_expired"], reverse=True)
 
     def empty_expired(self, chatid, storage):
