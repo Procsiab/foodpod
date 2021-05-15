@@ -355,7 +355,7 @@ class FoodPodBot:
         inline_keyboard = []
         inline_keyboard.append([])
         inline_keyboard[-1].append(InlineKeyboardButton("YES", callback_data=chatid+":del_storage_confirm:"+storage))
-        inline_keyboard[-1].append(InlineKeyboardButton("NO", callback_data=chatid+":back_button:back_storage"))
+        inline_keyboard[-1].append(InlineKeyboardButton("NO", callback_data=chatid+":back_button:back_item_list@"+storage))
         keyboard_markup = InlineKeyboardMarkup(inline_keyboard)
         msg_id = query.message.message_id
         chat_id = query.message.chat.id
