@@ -276,9 +276,7 @@ class FoodPodBot:
         if (len(item_list) > 0):
             inline_keyboard.pop()
             for item_name in item_list:
-                button_label = item_name
-                if (self._db_connection.get_item_quantity(chatid, storage, item_name) == 0):
-                    button_label = item_name+"❔ "
+                button_label = self._decorate_item_name(chatid, storage, item_name)
                 inline_button = [InlineKeyboardButton(button_label,
                                                       callback_data=chatid+":item_button:"+item_name)]
                 inline_keyboard.append(inline_button)
@@ -298,6 +296,20 @@ class FoodPodBot:
                                     message_id=msg_id, chat_id=chat_id,
                                     reply_markup=keyboard_markup,
                                     parse_mode="markdown")
+
+    def _decorate_item_name(self, chatid, storage, item):
+        if (self._db_connection.get_item_quantity(chatid, storage, item) == 0):
+            return item + "❔"
+        else:
+            item_expiry = self._db_connection.get_item_expiry(chatid, storage, item)
+            current_date = self._db_connection.get_current_date()
+            expires_in = (item_expiry - current_date).days
+            if (expires_in < 0):
+                return item+"‼️ "
+            elif (expires_in <= 2):
+                return item+"❗️"
+            else:
+                return item
 
     def _list_storage_expired_items(self, query, chatid, storage):
         _null_inline_button = [InlineKeyboardButton("~ Empty ~", callback_data=chatid+":empty_button:none")]

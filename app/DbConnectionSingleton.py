@@ -113,7 +113,8 @@ class DbConnectionSingleton:
         return int(self._db_instance.hget(chatid + ":" + storage + ":" + item_name, "Quantity"))
 
     def get_item_expiry(self, chatid, storage, item_name):
-        return self._db_instance.hget(chatid + ":" + storage + ":" + item_name, "Expire")
+        return datetime.strptime(self._db_instance.hget(chatid+":"+storage+":"+item_name, "Expire"),
+                                 "%Y-%m-%d").date()
 
     def set_item_quantity(self, chatid, storage, item_name, quantity):
         self._db_instance.hset(chatid + ":" + storage + ":" + item_name, "Quantity", quantity)
@@ -127,15 +128,15 @@ class DbConnectionSingleton:
     def get_item_list_len(self, chatid, storage):
         return self._db_instance.llen(chatid + ":" + storage + ":item_list")
 
+    def get_current_date(self):
+        return date.today()
+
     def get_item_expired_list(self, chatid, storage):
         item_list = self._db_instance.lrange(chatid + ":" + storage + ":item_list", 0, -1)
-        current_date = date.today()
+        current_date = self.get_current_date()
         expired_items_list = []
         for item_name in item_list:
-            item_expiry_date = datetime.strptime(self.get_item_expiry(chatid,
-                                                                      storage,
-                                                                      item_name),
-                                                 "%Y-%m-%d").date()
+            item_expiry_date = self.get_item_expiry(chatid, storage, item_name)
             item_quantity = int(self.get_item_quantity(chatid, storage, item_name))
             if (item_quantity > 0 and current_date > item_expiry_date):
                 days_expired_delta = (current_date - item_expiry_date).days
