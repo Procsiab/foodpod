@@ -48,6 +48,10 @@ Open the repository's root directory in a terminal and run the following command
 docker-compose up -d
 ```
 
+### Timezone
+
+The bot uses the `TZ` environment variable to offset the internal job timers; the variable is defined inside the `docker-compose.yaml` file, under the `env` section.
+
 ## Running on the host with venv
 
 Open the repository's root directory in a terminal and run the following commands:

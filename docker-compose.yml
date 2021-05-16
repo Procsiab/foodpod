@@ -13,6 +13,7 @@ services:
             - REDIS_PORT="6379"
             - REDIS_DB="0"
             - REDIS_PASS=""
+            - TZ="Europe/Rome"
     foodpod-db:
         image: redis:6.2.1-alpine
         container_name: foodpod-db
