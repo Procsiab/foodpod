@@ -1,10 +1,12 @@
-FROM amd64/python:3.10-rc-alpine3.13
+FROM amd64/python:3.9.5-alpine3.13
 
 LABEL maintainer "Lorenzo Prosseda <lerokamut@gmail.com>"
 
+ENV PYTHONUNBUFFERED 1
+ENV TZ Europe/Rome
 ADD ./app /app
 
-RUN pip install -I -r /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 WORKDIR /app
 VOLUME ["/app"]

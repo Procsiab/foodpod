@@ -1,16 +1,18 @@
-FROM arm32v7/python:3.10-rc-alpine3.13
+FROM arm32v7/python:3.9.5-alpine3.13
 
 LABEL maintainer "Lorenzo Prosseda <lerokamut@gmail.com>"
 
-COPY qemu-aarch64-static /usr/bin/
+COPY qemu-arm-static /usr/bin/
 
+ENV PYTHONUNBUFFERED 1
+ENV TZ Europe/Rome
 ADD ./app /app
 
-RUN pip install -I -r /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 WORKDIR /app
 VOLUME ["/app"]
 
-RUN rm -rf /usr/bin/qemu-aarch64-static
+RUN rm -rf /usr/bin/qemu-arm-static
 
 ENTRYPOINT ["python3", "main.py"]
