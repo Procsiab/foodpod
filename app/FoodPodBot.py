@@ -1,7 +1,7 @@
 import logging
 
 from telegram.ext import CommandHandler, MessageHandler, CallbackQueryHandler
-from telegram.ext import Updater, Filters
+from telegram.ext import Updater, Filters, CallbackContext
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Update, CallbackQuery
 from telegram.error import BadRequest
 from TelegramSecretsSingleton import TelegramSecretsSingleton
@@ -17,6 +17,9 @@ class FoodPodBot:
         self._job_queue = self._updater.job_queue
         self._auth_users = secrets.get_auth_users_list()
         self._db_connection = db
+        # Add daily recurring job for the report notification
+        self._job_queue.run_daily(self._callback_notify_expiry,
+                                  time=self._db_connection.get_notify_time())
         # Add handlers and jobs to the dispatcher
         start_handler = CommandHandler('start', self._callback_start)
         self._dispatcher.add_handler(start_handler)
@@ -150,7 +153,12 @@ class FoodPodBot:
             if (cmd_name == "del_storage"):
                 self._del_storage_dialog(_query, pressed_button["foodpod_id"], cmd_arg)
             if ("del_item" in cmd_name):
-                self._del_item_dialog(_query, pressed_button["foodpod_id"], cmd_arg, cmd_name)
+                item_name = cmd_name
+                storage_name = cmd_arg
+                if (cmd_arg == "item_check_button"):
+                    item_name = cmd_name.split("@")[1]
+                    storage_name = cmd_name.split("@")[2]
+                self._del_item_dialog(_query, pressed_button["foodpod_id"], storage_name, item_name)
             if ("del_expired@" in cmd_name):
                 storage_name = cmd_name.split('@')[1]
                 self._db_connection.empty_expired(pressed_button["foodpod_id"], storage_name)
@@ -257,6 +265,32 @@ class FoodPodBot:
             self._db_connection.set_global_cmd_name(_chatid, cmd_name)
             self._db_connection.set_global_cmd_arg(_chatid, cmd_arg)
             update.message.reply_text(reply_text, reply_markup=keyboard_markup)
+
+    def _callback_notify_expiry(self, context: CallbackContext):
+        foodpod_list = self._db_connection.get_pods()
+        for pod in foodpod_list:
+            bad_items = self._db_connection.get_item_expiring_or_bad_list(pod)
+            if (len(bad_items) > 0):
+                inline_keyboard = []
+                for item_dict in bad_items:
+                    name_fmt_str = "{} ({} days ago)"
+                    if (int(item_dict["days_expired"]) < 0):
+                        name_fmt_str = "{} (in {} days)"
+                    item_name = name_fmt_str.format(self._decorate_item_name(pod,
+                                                                             item_dict["storage"],
+                                                                             item_dict["item_name"]),
+                                                    abs(int(item_dict["days_expired"])))
+                    inline_button = [InlineKeyboardButton(item_name,
+                                                          callback_data=pod+":item_check_button:"+item_dict["item_name"]+"@"+item_dict["storage"])]
+                    inline_keyboard.append(inline_button)
+                inline_keyboard.append([])
+                inline_keyboard[-1].append(InlineKeyboardButton("⬅️  Back", callback_data=pod+":back_button:back_bot"))
+                keyboard_markup = InlineKeyboardMarkup(inline_keyboard)
+                reply_text = "🔔 *Status notification*\nThe following items have gone bad or are going to shortly"
+                context.bot.send_message(chat_id=pod,
+                                         text=reply_text,
+                                         reply_markup=keyboard_markup,
+                                         parse_mode="markdown")
 
     def _callback_check(self, query, context):
         _chatid = str(query.message.chat.id)
@@ -400,7 +434,7 @@ class FoodPodBot:
         else:
             inline_keyboard[-1].append(InlineKeyboardButton("⬅️  Back", callback_data=chatid+":back_button:back_item_list@"+storage_name))
         inline_keyboard.append([InlineKeyboardButton("⤵️  Delete {}".format(item_name),
-                                                     callback_data=chatid+":del_button:del_item@"+item_name)])
+                                                     callback_data=chatid+":del_button:del_item@"+item_name+"@"+storage_name)])
         keyboard_markup = InlineKeyboardMarkup(inline_keyboard)
         msg_id = query.message.message_id
         chat_id = query.message.chat.id
@@ -429,7 +463,9 @@ class FoodPodBot:
                                     reply_markup=keyboard_markup)
 
     def _del_item_dialog(self, query, chatid, storage, item):
-        item_name = item.split('@')[1]
+        item_name = item
+        if (len(item.split('@')) > 1):
+            item_name = item.split('@')[1]
         inline_keyboard = []
         inline_keyboard.append([])
         inline_keyboard[-1].append(InlineKeyboardButton("YES", callback_data=chatid+":del_item_confirm:"+storage+"@"+item_name))
