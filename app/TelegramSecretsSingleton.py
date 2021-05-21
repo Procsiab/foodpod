@@ -22,7 +22,7 @@ class TelegramSecretsSingleton:
             # Look for a secrets folder mounted in the root / (for the Linux container);
             # if not present, assume the folder is in the same directory from where the
             # program was launched
-            _secrets_path = '/secrets/'
+            _secrets_path = '/auth/'
             _secrets_folder = Path(_secrets_path)
             if not _secrets_folder.exists():
                 _secrets_path = './.secrets/'

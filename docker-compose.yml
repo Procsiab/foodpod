@@ -5,7 +5,7 @@ services:
         container_name: foodpod
         hostname: foodpod
         volumes:
-            - ./.secrets:/secrets:Z
+            - ./.secrets:/auth:Z
         restart: unless-stopped
         env:
             - REDIS_HOST="foodpod-db"

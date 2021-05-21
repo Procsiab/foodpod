@@ -65,6 +65,8 @@ python3 app/main.py
 
 The bot should start logging some info.
 
+**NOTE**: At this point, you will still need to have a Redis database, reachable from the host you launched the Python program; remember to export the required environment variable, if the DB needs different parameters from the default ones.
+
 ## The DB backend
 
 *WARNING*: The bot will need to connect to a Redis DB instance; the easiest way to provide this functionality for local testing, is to run a Redis container. After creating a `.redis` folder in the repo's root directory, run the following command from teh same location:
@@ -82,6 +84,8 @@ export REDIS_HOST="localhost"
 export REDIS_PORT="6379"
 export REDIS_DB="0"
 export REDIS_PASS=""
+export TZ="Europe/Rome"
 ```
+**NOTE**: The `TZ` variable is needed to set the timezone for the bot to schedule correctly the daily notification. By default, the notification time is hardcoded at 8 a.m.
 
 These default values are used inside the compose file, and loaded if nothing is provided.
