@@ -41,7 +41,7 @@ class FoodPodBot:
                                         self._callback_message)
         self._dispatcher.add_handler(string_handler)
         # Handler to print error messages
-#        self._dispatcher.add_error_handler(self._callback_error)
+        self._dispatcher.add_error_handler(self._callback_error)
 
     def _callback_start(self, update, context):
         _username = update.message.from_user.username
@@ -91,13 +91,13 @@ class FoodPodBot:
             _chatid = str(update.message.chat.id)
             if (_chatid is not None):
                 context.bot.send_message(chat_id=_chatid,
-                                         text="🚨 The following error occurred, contact an administrator: {}"
-                                         .format(context.error))
+                                         text="🚨 The following error occurred: {}"
+                                         .format(str(context.error)))
         except AttributeError:
-            pass
-        logging.warning("Could not send the error notification to the user: unable to get the chat ID")
-        logging.error("During update {}, an error occurred: {}"
-                      .format(update, context.error))
+            logging.warning("Could not send the error notification to the user: unable to get the chat ID")
+        finally:
+            logging.error("During update {}, an error occurred: {}"
+                          .format(update, context.error))
 
     def _register_new_pod(self, chatid, bot):
         if (not self._db_connection.is_pod_registered(chatid)):
@@ -223,26 +223,28 @@ class FoodPodBot:
 
     def _callback_message(self, update, context):
         _chatid = str(update.message.chat.id)
+        _user_input = update.message.text
+        self._db_connection._validate_input_text(_user_input)
         cmd_name = self._db_connection.get_global_cmd_name(_chatid)
         cmd_arg = self._db_connection.get_global_cmd_arg(_chatid)
         reply_text = None
         keyboard_markup = None
         is_invalid_callback = False
         if (cmd_name == "new_storage"):
-            storage_name = update.message.text
+            storage_name = _user_input
             self._db_connection.add_storage(_chatid, storage_name)
             reply_text = "Storage '{}' added to the Food Pod".format(storage_name)
             cmd_name = "none"
             cmd_arg = "none"
         elif (cmd_name == "new_item"):
-            item_name = update.message.text
+            item_name = _user_input
             storage_name = cmd_arg
             self._db_connection.add_item(_chatid, storage_name, item_name)
             reply_text = "Item '{}' added to the storage '{}'\nWrite the quantity as an integer, use /stop to abort".format(item_name, storage_name)
             cmd_arg = storage_name+"@"+item_name
             cmd_name = "modify_item"
         elif (cmd_name == "modify_item"):
-            item_quantity = update.message.text
+            item_quantity = _user_input
             item_string = cmd_arg.split('@')
             storage_name = item_string[0]
             item_name = item_string[1]
@@ -250,7 +252,8 @@ class FoodPodBot:
             reply_text = "Write the expiration date in ISO format, use /stop to abort"
             cmd_name = "modify_item2"
         elif (cmd_name == "modify_item2"):
-            item_expiry = update.message.text
+            item_expiry = _user_input
+            self._db_connection._validate_input_date(item_expiry)
             item_string = cmd_arg.split('@')
             storage_name = item_string[0]
             item_name = item_string[1]

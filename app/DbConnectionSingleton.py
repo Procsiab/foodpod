@@ -77,6 +77,16 @@ class DbConnectionSingleton:
                 return True
         return False
 
+    def _validate_input_text(self, user_input):
+        if (len(user_input) > 20 or ':' in user_input or '@' in user_input):
+            raise Exception("Wrong input! You must enter at most 20 characters, avoiding ':' and '@'")
+
+    def _validate_input_date(self, user_input):
+        try:
+            datetime.strptime(user_input, "%Y-%m-%d").date()
+        except ValueError:
+            raise Exception("Wrong input! You must enter a date in the format YYYY-MM-DD")
+
     def add_pod(self, chatid):
         self._db_instance.lpush("global:pods", chatid)
 
