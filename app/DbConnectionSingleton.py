@@ -87,6 +87,12 @@ class DbConnectionSingleton:
         except ValueError:
             raise Exception("Wrong input! You must enter a date in the format YYYY-MM-DD")
 
+    def _validate_input_quantity(self, user_input):
+        try:
+            int(user_input)
+        except ValueError:
+            raise Exception("Wrong input! You must enter an integer")
+
     def add_pod(self, chatid):
         self._db_instance.lpush("global:pods", chatid)
 

@@ -245,10 +245,11 @@ class FoodPodBot:
             cmd_name = "modify_item"
         elif (cmd_name == "modify_item"):
             item_quantity = _user_input
+            self._db_connection._validate_input_quantity(item_quantity)
             item_string = cmd_arg.split('@')
             storage_name = item_string[0]
             item_name = item_string[1]
-            self._db_connection.set_item_quantity(_chatid, storage_name, item_name, item_quantity)
+            self._db_connection.set_item_quantity(_chatid, storage_name, item_name, int(item_quantity))
             reply_text = "Write the expiration date in ISO format, use /stop to abort"
             cmd_name = "modify_item2"
         elif (cmd_name == "modify_item2"):
