@@ -1,7 +1,7 @@
 version: "3"
 services:
     bot:
-        image: procsiab/foodpod:1.0-aarch64
+        image: procsiab/foodpod:1.2-aarch64
         container_name: foodpod
         hostname: foodpod
         volumes:

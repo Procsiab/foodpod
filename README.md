@@ -1,5 +1,10 @@
 # FoodPod Telegram Bot
 
+[![Container Build](https://github.com/Procsiab/foodpod/actions/workflows/build-container-publish-dockerhub.yaml/badge.svg)](https://github.com/Procsiab/foodpod/actions/workflows/build-container-publish-dockerhub.yaml)
+
+![Docker Image Version (latest by date)](https://img.shields.io/docker/v/procsiab/foodpod?label=Latest%20tag%20pushed%20on%20Docker%20Hub)
+
+
 #### Description
 
 This repository contains the code for a docker-compose deployable Telegram bot, which uses the [Python Telegram API](https://github.com/python-telegram-bot/python-telegram-bot) and the [Redis](https://github.com/redis/redis) NoSQL DBMS; the bot will work as a "food cupboard assistant", helping the user to keep track of what food and how many they have, where is it stored and when will it will go bad.
