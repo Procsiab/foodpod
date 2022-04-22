@@ -1,24 +1,18 @@
 version: "3"
 services:
-    bot:
-        image: procsiab/foodpod:1.2-aarch64
-        container_name: foodpod
-        hostname: foodpod
+    app:
+        image: docker.io/procsiab/foodpod:1.3-amd64
         volumes:
             - ./.secrets:/auth:Z
         restart: unless-stopped
         env:
-            - REDIS_HOST="foodpod-db"
+            - REDIS_HOST="compose_db_1"
             - REDIS_PORT="6379"
             - REDIS_DB="0"
             - REDIS_PASS=""
             - TZ="Europe/Rome"
-    foodpod-db:
-        image: redis:6.2.1-alpine
-        container_name: foodpod-db
-        hostname: foodpod-db
+    db:
+        image: docker.io/library/redis:6.2.6-alpine
         volumes:
             - .redis:/data:Z
-        ports:
-            - "6379:6379"
         command: ["redis-server", "--appendonly", "yes"]

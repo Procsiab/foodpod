@@ -1,6 +1,10 @@
-FROM amd64/python:3.9.5-alpine3.13
+ARG PYTHON_VERSION=3.9.12-alpine3.15
+
+FROM docker.io/arm32v7/python:${PYTHON_VERSION}
 
 LABEL maintainer "Lorenzo Prosseda <lerokamut@gmail.com>"
+
+COPY qemu-arm-static /usr/bin/
 
 ENV PYTHONUNBUFFERED 1
 ENV TZ Europe/Rome
@@ -9,5 +13,7 @@ ADD ./app /app
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 WORKDIR /app
+
+RUN rm -rf /usr/bin/qemu-arm-static
 
 ENTRYPOINT ["python3", "main.py"]
