@@ -20,10 +20,9 @@ This application does not encrypt data at rest, nor in transit: it's a project I
 The Containerfile is written to allow cross-architecture builds, using QEMU's user-static package: to build the image on x86 for another platform do the following:
 
 - be sure to install `qemu-user-static` if you need to run the container on a different architecture from the local one;
-- to build the container for (e.g.) *aarch64*, run `cp $(which qemu-aarch64-static) .`;
 - run the build process with `podman build -t myregistry/foodpod:latest -f Containerfile.amd64 .`.
 
-If you want to use a target architecture different from ARM 64 bit, just select the Containerfile and the _qemu-static-*_ binary file according to the target architecture - remember to copy the _qemu-static-*_ binary into the repo directory as shown above.
+If you want to use a target architecture different from ARM 64 bit, just select the Containerfile according to the target architecture
 
 *NOTE*: If you are using Podman, just run the `build` command from above after replacing `docker` with `podman`.
 
@@ -77,7 +76,7 @@ The bot should start logging some info.
 *WARNING*: The bot will need to connect to a Redis DB instance; the easiest way to provide this functionality for local testing, is to run a Redis container. After creating a `.redis` folder in the repo's root directory, run the following command from teh same location:
 
 ```bash
-podman run --rm -d --name foodpod-db -v .redis:/data:Z -p 6379:6379 redis:6.2.6-alpine --appendonly yes
+podman run --rm -d --name foodpod-db -v .redis:/data:Z -p 6379:6379 docker.io/library/redis:6.2.6-alpine --appendonly yes
 ```
 
 You may choose a different location for the Redis container persistent volume, since it could also be running on another host. To do so, be sure to change the volume path inside the command above, or inside the docker-compose file.

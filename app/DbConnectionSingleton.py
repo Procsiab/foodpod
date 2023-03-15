@@ -59,27 +59,9 @@ class DbConnectionSingleton:
     def get_db_pass(self):
         return copy(self._db_pass)
 
-    def get_info(self):
-        try:
-            res = self._db_instance.info(section='Server')
-        except redis.exceptions.ConnectionError:
-            res = "🚨 Error contacting the database backend"
-            logging.error("Error contacting the database backend: ConnectionError at {}:{}"
-                          .format(self._db_host, self._db_port))
-        finally:
-            return res
-
-    def is_pod_registered(self, chatid):
-        # TODO: Check why lpos method is not available for a redis.Redis instance
-        global_pods = self.get_pods()
-        for registered_id in global_pods:
-            if registered_id == chatid:
-                return True
-        return False
-
     def _validate_input_text(self, user_input):
-        if (len(user_input) > 20 or ':' in user_input or '@' in user_input):
-            raise Exception("Wrong input! You must enter at most 20 characters, avoiding ':' and '@'")
+        if (len(user_input) > 63):
+            raise Exception("Wrong input! You must enter at most 63 characters")
 
     def _validate_input_date(self, user_input):
         try:
@@ -92,64 +74,6 @@ class DbConnectionSingleton:
             int(user_input)
         except ValueError:
             raise Exception("Wrong input! You must enter an integer")
-
-    def add_pod(self, chatid):
-        self._db_instance.lpush("global:pods", chatid)
-
-    def get_pods(self):
-        return self._db_instance.lrange("global:pods", 0, -1)
-
-    def set_global_cmd_name(self, chatid, cmd_name):
-        self._db_instance.hset(chatid+":global_command", "Name", cmd_name)
-
-    def set_global_cmd_arg(self, chatid, cmd_arg):
-        self._db_instance.hset(chatid+":global_command", "Arg", cmd_arg)
-
-    def get_global_cmd_name(self, chatid):
-        return self._db_instance.hget(chatid+":global_command", "Name")
-
-    def get_global_cmd_arg(self, chatid):
-        return self._db_instance.hget(chatid+":global_command", "Arg")
-
-    def add_storage(self, chatid, name):
-        self._db_instance.lpush(chatid + ":storage_list", name)
-
-    def get_storage_list(self, chatid):
-        return self._db_instance.lrange(chatid + ":storage_list", 0, -1)
-
-    def del_storage(self, chatid, storage):
-        for item in self.get_item_list(chatid, storage):
-            self._db_instance.delete(chatid + ":" + storage + ":" + item)
-        self._db_instance.delete(chatid + ":" + storage + ":item_list")
-        self._db_instance.lrem(chatid + ":storage_list", 1, storage)
-
-    def add_item(self, chatid, storage, item_name):
-        self._db_instance.lpush(chatid + ":" + storage + ":item_list", item_name)
-        self.set_item_quantity(chatid, storage, item_name, 0)
-        self.set_item_expiry(chatid, storage, item_name, "2000-12-31")
-
-    def del_item(self, chatid, storage, item_name):
-        self._db_instance.delete(chatid + ":" + storage + ":" + item_name)
-        self._db_instance.lrem(chatid + ":" + storage + ":item_list", 1, item_name)
-
-    def get_item_quantity(self, chatid, storage, item_name):
-        return int(self._db_instance.hget(chatid + ":" + storage + ":" + item_name, "Quantity"))
-
-    def get_item_expiry(self, chatid, storage, item_name):
-        return datetime.strptime(self._db_instance.hget(chatid+":"+storage+":"+item_name, "Expire"),
-                                 "%Y-%m-%d").date()
-
-    def set_item_quantity(self, chatid, storage, item_name, quantity):
-        self._db_instance.hset(chatid + ":" + storage + ":" + item_name, "Quantity", quantity)
-
-    def set_item_expiry(self, chatid, storage, item_name, expiry):
-        self._db_instance.hset(chatid + ":" + storage + ":" + item_name, "Expire", expiry)
-
-    def get_item_list(self, chatid, storage):
-        return self._db_instance.lrange(chatid + ":" + storage + ":item_list", 0, -1)
-
-    def get_item_list_len(self, chatid, storage):
-        return self._db_instance.llen(chatid + ":" + storage + ":item_list")
 
     def get_current_date(self):
         return date.today()
@@ -167,38 +91,8 @@ class DbConnectionSingleton:
                               tzinfo=self._timezone)
         return _notify_at
 
-    def get_item_expired_list(self, chatid, storage):
-        item_list = self._db_instance.lrange(chatid + ":" + storage + ":item_list", 0, -1)
-        current_date = self.get_current_date()
-        expired_items_list = []
-        for item_name in item_list:
-            item_expiry_date = self.get_item_expiry(chatid, storage, item_name)
-            item_quantity = int(self.get_item_quantity(chatid, storage, item_name))
-            if (item_quantity > 0 and current_date > item_expiry_date):
-                days_expired_delta = (current_date - item_expiry_date).days
-                expired_items_list.append({"item_name": item_name,
-                                           "storage": storage,
-                                           "days_expired": int(days_expired_delta)})
-        return sorted(expired_items_list, key=lambda k: k["days_expired"], reverse=True)
+    def add_pod(self, chatid: str) -> None:
+        pass
 
-    def get_item_expiring_or_bad_list(self, chatid):
-        current_date = self.get_current_date()
-        storage_list = self._db_instance.lrange(chatid + ":storage_list", 0, -1)
-        expired_items_list = []
-        for storage_name in storage_list:
-            item_list = self._db_instance.lrange(chatid+":"+storage_name+":item_list", 0, -1)
-            for item_name in item_list:
-                item_expiry_date = self.get_item_expiry(chatid, storage_name, item_name)
-                item_quantity = self.get_item_quantity(chatid, storage_name, item_name)
-                days_expired_delta = (current_date - item_expiry_date).days
-                if (item_quantity > 0 and days_expired_delta >= -2):
-                    expired_items_list.append({"item_name": item_name,
-                                               "storage": storage_name,
-                                               "days_expired": int(days_expired_delta)})
-        return sorted(expired_items_list, key=lambda k: k["days_expired"], reverse=True)
-
-    def empty_expired(self, chatid, storage):
-        expired_item_list = self.get_item_expired_list(chatid, storage)
-        for expired_item_dict in expired_item_list:
-            expired_item_name = expired_item_dict["item_name"]
-            self.set_item_quantity(chatid, storage, expired_item_name, 0)
+    def is_pod_registered(self, chatid: str) -> bool:
+        return True
